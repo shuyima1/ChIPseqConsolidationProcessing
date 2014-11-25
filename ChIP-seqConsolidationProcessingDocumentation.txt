@@ -1,0 +1,58 @@
+#### ChIP-seq Processing Documentation: ####
+# 2014 Shuyi Ma
+#
+# Used in Minch et al., (2014) The DNA binding network of Mycobacterium
+# tuberculosis. In Press at Nature Communications.
+#
+#############################################
+
+This pipeline consolidates the individual peak information from the .csv files generated from analyzing the individual ChIP-seq experiments using Bob Morrison's pipeline. Peaks from replicate experiments are consolidated in this pipeline, and significant peaks from all experiments are extracted and concatenated.
+
+The process is as follows:
+
+1. Each experiment will be labeled as RvXXXX_BXXX, and the data are contained in a separate folder named for eaxh experiment. The .csv file is labeled as: 'RvXXXX_BXXX.MTb.ChIPpeaks.Excel.csv'. The user must first compile a .txt file of a list of all of the individual experiment labels to be combined (i.e. no control peaks, and only experiments of the correct experimental conditions should be included in this file).
+
+	Run samplefilesparsing.py and enter the .txt file containing the experiment labels.
+
+This code will generate separate samplefilesX.txt files that contains the label names of each TF that has X number of replicates. TFs with multiple replicate experiments will be treated differently from TFs with only 1 replicate.
+
+2. To process TFs with single replicates, run:
+
+	ConsensusBindingNetworkExtractor-psingle.py
+
+This code will expect a file named 'samplefiles1.txt', containing all of the experiment labels for TFs with one replicate. The code will ask for the p-value threshold (e.g. 0.05)
+
+The code will output 2 files:
+
+	MTB_ChIPbindingnetworkinfo1.txt
+	 - contains the information for all significant peaks of the TFs with one replicate
+	MTBChIPpeakoverlay1.txt
+	 - a vector of length of the size of the MTB genome, with each element denoting the number of peak footprints that fall into each base location.
+
+3. For each of the remaining samplefilesX.txt files, run:
+	
+	ConsensusBindingNetworkExtractor-pmulti.py
+
+	This code has the following inputs:
+	 - Will need to input the number of replicates described in samplefilesX.txt (i.e. what is X?)
+	 - Will need the name of the most recent MTBChIPpeakoverlayX.txt file that was generated
+	 - Will need the p-value threshold
+
+	 This code will output 2 files:
+	 MTB_ChIPbindingnetworkinfoX.txt
+	 and
+	 MTBChIPpeakoverlayX.txt
+
+	 which are analogous to the output files generated from the -single code.
+
+4. Each of the MTB_ChIPbindingnetworkinfoX.txt need to be concatenated. This can be done manually or through a script. One possible linux script would be:
+
+	cat "MTB_ChIPbindingnetworkinfo*" > 'MTBchipnetwork.txt'
+
+5. (optional) To count the number of TFs that have peaks overlapping at a particular location, run:
+
+	ComparingBindingconsensus2.py
+
+	This code will ask for a .txt file of the consolidated network generated from Step 4. 
+
+	This code outputs a file with peak overlap counts for each peak in the input file.
